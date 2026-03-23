@@ -7,9 +7,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ─────────────────────────────────────────────
-  # JOB 1 – VALIDATE
-  # ─────────────────────────────────────────────
   validate:
     name: Train & Validate Model
     runs-on: ubuntu-latest
@@ -48,9 +45,6 @@ jobs:
             mlruns/
           retention-days: 1
 
-  # ─────────────────────────────────────────────
-  # JOB 2 – DEPLOY
-  # ─────────────────────────────────────────────
   deploy:
     name: Check Threshold & Deploy
     runs-on: ubuntu-latest
