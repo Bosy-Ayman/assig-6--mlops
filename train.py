@@ -1,60 +1,37 @@
-"""
-check_threshold.py
-------------------
-Reads the Run ID from model_info.txt, loads accuracy from the local
-mlruns/ folder, and fails the pipeline if accuracy is below THRESHOLD.
-
-CIFAR-10 with a Random Forest on raw pixels typically scores 0.31–0.35,
-so the threshold is set to 0.30 — still meaningful as a quality gate
-(random baseline is 0.10 for 10 classes).
-For the failed-run screenshot, force accuracy = 0.20 in train.py.
-"""
-
-import sys
+import os
 import mlflow
+import mlflow.sklearn
+from sklearn.datasets import make_classification
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
-THRESHOLD = 0.30   # realistic floor: 1000-sample CIFAR-10 + Random Forest scores ~0.31-0.35
-                   # random baseline = 0.10 (10 classes), so 0.30 is still a meaningful gate
+# Uses secret in CI, falls back to local mlruns/ folder locally
+tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+mlflow.set_tracking_uri(tracking_uri)
+mlflow.set_experiment("assignment5")
 
-mlflow.set_tracking_uri("mlruns")
-client = mlflow.tracking.MlflowClient()
+X, y = make_classification(
+    n_samples=1000,
+    n_features=20,
+    n_informative=15,
+    n_redundant=5,
+    random_state=42,
+)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-# ── Read Run ID ───────────────────────────────────────────────────────────────
-try:
-    with open("model_info.txt") as f:
-        run_id = f.read().strip()
-except FileNotFoundError:
-    print("ERROR: model_info.txt not found.", file=sys.stderr)
-    sys.exit(1)
+with mlflow.start_run() as run:
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf.fit(X_train, y_train)
 
-if not run_id:
-    print("ERROR: model_info.txt is empty.", file=sys.stderr)
-    sys.exit(1)
+    accuracy = accuracy_score(y_test, clf.predict(X_test))
 
-print(f"Run ID   : {run_id}")
+    mlflow.log_param("n_estimators", 100)
+    mlflow.log_param("dataset", "synthetic make_classification")
+    mlflow.log_metric("accuracy", accuracy)
+    mlflow.sklearn.log_model(clf, artifact_path="model")
 
-# ── Fetch accuracy from local mlruns/ ────────────────────────────────────────
-try:
-    run = client.get_run(run_id)
-except Exception as e:
-    print(f"ERROR: Could not load run — {e}", file=sys.stderr)
-    sys.exit(1)
-
-accuracy = run.data.metrics.get("accuracy")
-if accuracy is None:
-    print("ERROR: 'accuracy' metric not found in run.", file=sys.stderr)
-    sys.exit(1)
-
-print(f"Accuracy : {accuracy:.4f}")
-print(f"Threshold: {THRESHOLD}")
-
-# ── Gate ─────────────────────────────────────────────────────────────────────
-if accuracy < THRESHOLD:
-    print(
-        f"\n❌ FAILED — accuracy {accuracy:.4f} is below {THRESHOLD}. "
-        "Deployment aborted.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
-
-print(f"\n✅ PASSED — accuracy {accuracy:.4f} meets the threshold. Deploying.")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"RUN_ID:{run.info.run_id}")   
