@@ -1,55 +1,38 @@
 """
 check_threshold.py
 ------------------
-Reads the Run ID from model_info.txt, fetches accuracy from MLflow
-(local file store or remote server), and fails if below 0.85.
+Reads Run ID and accuracy directly from model_info.txt.
+No MLflow server or local mlruns/ access needed in the deploy job.
 """
 
-import os
 import sys
-import mlflow
 
 THRESHOLD = 0.85
 
-# Must match the URI used in train.py
-tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
-mlflow.set_tracking_uri(tracking_uri)
-client = mlflow.tracking.MlflowClient()
-
-# ── Read Run ID ───────────────────────────────────────────────────────────────
 try:
     with open("model_info.txt") as f:
-        run_id = f.read().strip()
+        lines = f.read().strip().splitlines()
 except FileNotFoundError:
     print("ERROR: model_info.txt not found.", file=sys.stderr)
     sys.exit(1)
 
-if not run_id:
-    print("ERROR: model_info.txt is empty.", file=sys.stderr)
+if len(lines) < 2:
+    print("ERROR: model_info.txt must contain run_id and accuracy.", file=sys.stderr)
     sys.exit(1)
+
+run_id   = lines[0].strip()
+accuracy = float(lines[1].strip())
 
 print(f"Run ID   : {run_id}")
-
-try:
-    run = client.get_run(run_id)
-except Exception as e:
-    print(f"ERROR: Could not load run — {e}", file=sys.stderr)
-    sys.exit(1)
-
-accuracy = run.data.metrics.get("accuracy")
-if accuracy is None:
-    print("ERROR: 'accuracy' metric not found in run.", file=sys.stderr)
-    sys.exit(1)
-
 print(f"Accuracy : {accuracy:.4f}")
 print(f"Threshold: {THRESHOLD}")
 
 if accuracy < THRESHOLD:
     print(
-        f"\n FAILED — accuracy {accuracy:.4f} is below {THRESHOLD}. "
+        f"\n❌ FAILED — accuracy {accuracy:.4f} is below {THRESHOLD}. "
         "Deployment aborted.",
         file=sys.stderr,
     )
     sys.exit(1)
 
-print(f"\n PASSED — accuracy {accuracy:.4f} meets the threshold. Deploying.")
+print(f"\n✅ PASSED — accuracy {accuracy:.4f} meets the threshold. Deploying.")

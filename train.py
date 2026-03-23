@@ -1,3 +1,10 @@
+"""
+train.py
+--------
+Trains a Random Forest on synthetic data, logs to local MLflow,
+and writes both Run ID and accuracy to model_info.txt.
+"""
+
 import os
 import mlflow
 import mlflow.sklearn
@@ -6,7 +13,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-# Uses secret in CI, falls back to local mlruns/ folder locally
 tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
 mlflow.set_tracking_uri(tracking_uri)
 mlflow.set_experiment("assignment5")
@@ -33,5 +39,10 @@ with mlflow.start_run() as run:
     mlflow.log_metric("accuracy", accuracy)
     mlflow.sklearn.log_model(clf, artifact_path="model")
 
+    # Write both values to model_info.txt so deploy job needs no MLflow access
+    with open("model_info.txt", "w") as f:
+        f.write(f"{run.info.run_id}\n")
+        f.write(f"{accuracy:.4f}\n")
+
     print(f"Accuracy: {accuracy:.4f}")
-    print(f"RUN_ID:{run.info.run_id}")   
+    print(f"RUN_ID:{run.info.run_id}")   # still parsed by the workflow

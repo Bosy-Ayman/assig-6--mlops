@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1 – VALIDATE
+  # ─────────────────────────────────────────────
   validate:
     name: Train & Validate Model
     runs-on: ubuntu-latest
@@ -33,18 +36,20 @@ jobs:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
         run: |
           python train.py | tee train_output.txt
-          grep "^RUN_ID:" train_output.txt | sed 's/^RUN_ID://' > model_info.txt
-          echo "Captured Run ID: $(cat model_info.txt)"
+          grep "^RUN_ID:" train_output.txt | sed 's/^RUN_ID://' > run_id.txt
+          echo "Captured Run ID: $(cat run_id.txt)"
 
-      - name: Upload artifacts
+      # model_info.txt already contains both run_id and accuracy
+      - name: Upload model_info artifact
         uses: actions/upload-artifact@v4
         with:
           name: model-artifacts
-          path: |
-            model_info.txt
-            mlruns/
+          path: model_info.txt
           retention-days: 1
 
+  # ─────────────────────────────────────────────
+  # JOB 2 – DEPLOY
+  # ─────────────────────────────────────────────
   deploy:
     name: Check Threshold & Deploy
     runs-on: ubuntu-latest
@@ -64,28 +69,18 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Download artifacts
+      - name: Download model_info artifact
         uses: actions/download-artifact@v4
         with:
           name: model-artifacts
           path: .
 
-      # Debug — confirm files are where we expect them
-      - name: List downloaded files
-        run: |
-          echo "=== Working directory ==="
-          ls -la
-          echo "=== mlruns/ contents ==="
-          find mlruns/ -type f | head -20
-
       - name: Check accuracy threshold
-        env:
-          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
         run: python check_threshold.py
 
       - name: Mock Docker build
         run: |
-          RUN_ID=$(cat model_info.txt)
+          RUN_ID=$(head -1 model_info.txt)
           echo "Building Docker image for Run ID: ${RUN_ID}"
           docker build --build-arg RUN_ID="${RUN_ID}" -t ml-model:${RUN_ID} .
           echo "Docker image ml-model:${RUN_ID} built successfully."
