@@ -28,14 +28,17 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Pull data (DVC)
+        run: echo "DVC pull simulated — dataset is generated inside train.py"
+
       - name: Train model
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
         run: |
           python train.py | tee train_output.txt
           grep "^RUN_ID:" train_output.txt | sed 's/^RUN_ID://' > model_info.txt
           echo "Captured Run ID: $(cat model_info.txt)"
 
-      # Upload BOTH model_info.txt AND the local mlruns/ folder
-      # so the deploy job can query metrics without a server
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -67,13 +70,23 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Restores model_info.txt and mlruns/ into the working directory
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: model-artifacts
+          path: .
+
+      # Debug — confirm files are where we expect them
+      - name: List downloaded files
+        run: |
+          echo "=== Working directory ==="
+          ls -la
+          echo "=== mlruns/ contents ==="
+          find mlruns/ -type f | head -20
 
       - name: Check accuracy threshold
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
         run: python check_threshold.py
 
       - name: Mock Docker build
