@@ -1,0 +1,15 @@
+artifact_uri: file:C:/Users/pouss/Documents/CSAI/4th Year/Spring/DSAI-406-MLOps/assignments-solutions/assignment
+  6/mlruns/731315793413579071/7f3c8b59030143f086df48e9955e7906/artifacts
+end_time: 1774285252504
+entry_point_name: ''
+experiment_id: '731315793413579071'
+lifecycle_stage: active
+run_id: 7f3c8b59030143f086df48e9955e7906
+run_name: bright-gnu-706
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1774285242947
+status: 3
+tags: []
+user_id: pouss

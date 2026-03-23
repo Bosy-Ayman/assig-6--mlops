@@ -1,0 +1,24 @@
+artifact_path: file:C:/Users/pouss/Documents/CSAI/4th Year/Spring/DSAI-406-MLOps/assignments-solutions/assignment
+  6/mlruns/731315793413579071/models/m-ad0e95021af246fb8588a3c6317af7f2/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.11
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.10.1
+model_id: m-ad0e95021af246fb8588a3c6317af7f2
+model_size_bytes: 1409972
+model_uuid: m-ad0e95021af246fb8588a3c6317af7f2
+prompts: null
+run_id: cb5e0195a6944d709b89cadde1299de9
+utc_time_created: '2026-03-23 16:53:22.702624'

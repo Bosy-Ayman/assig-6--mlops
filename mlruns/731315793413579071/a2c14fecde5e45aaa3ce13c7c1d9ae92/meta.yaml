@@ -1,0 +1,15 @@
+artifact_uri: file:C:/Users/pouss/Documents/CSAI/4th Year/Spring/DSAI-406-MLOps/assignments-solutions/assignment
+  6/mlruns/731315793413579071/a2c14fecde5e45aaa3ce13c7c1d9ae92/artifacts
+end_time: 1774284795834
+entry_point_name: ''
+experiment_id: '731315793413579071'
+lifecycle_stage: active
+run_id: a2c14fecde5e45aaa3ce13c7c1d9ae92
+run_name: useful-wasp-561
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1774284787186
+status: 3
+tags: []
+user_id: pouss

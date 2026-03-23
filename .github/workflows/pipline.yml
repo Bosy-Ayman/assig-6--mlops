@@ -1,0 +1,84 @@
+name: ML Validation and Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1 – VALIDATE
+  # ─────────────────────────────────────────────
+  validate:
+    name: Train & Validate Model
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Train model
+        run: |
+          python train.py | tee train_output.txt
+          grep "^RUN_ID:" train_output.txt | sed 's/^RUN_ID://' > model_info.txt
+          echo "Captured Run ID: $(cat model_info.txt)"
+
+      # Upload BOTH model_info.txt AND the local mlruns/ folder
+      # so the deploy job can query metrics without a server
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts
+          path: |
+            model_info.txt
+            mlruns/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # JOB 2 – DEPLOY
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Check Threshold & Deploy
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Restores model_info.txt and mlruns/ into the working directory
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: model-artifacts
+
+      - name: Check accuracy threshold
+        run: python check_threshold.py
+
+      - name: Mock Docker build
+        run: |
+          RUN_ID=$(cat model_info.txt)
+          echo "Building Docker image for Run ID: ${RUN_ID}"
+          docker build --build-arg RUN_ID="${RUN_ID}" -t ml-model:${RUN_ID} .
+          echo "Docker image ml-model:${RUN_ID} built successfully."

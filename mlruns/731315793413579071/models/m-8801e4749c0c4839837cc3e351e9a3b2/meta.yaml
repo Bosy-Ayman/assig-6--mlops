@@ -1,0 +1,11 @@
+artifact_location: file:C:/Users/pouss/Documents/CSAI/4th Year/Spring/DSAI-406-MLOps/assignments-solutions/assignment
+  6/mlruns/731315793413579071/models/m-8801e4749c0c4839837cc3e351e9a3b2/artifacts
+creation_timestamp: 1774284787648
+experiment_id: '731315793413579071'
+last_updated_timestamp: 1774284795767
+model_id: m-8801e4749c0c4839837cc3e351e9a3b2
+model_type: null
+name: model
+source_run_id: a2c14fecde5e45aaa3ce13c7c1d9ae92
+status: 2
+status_message: null
