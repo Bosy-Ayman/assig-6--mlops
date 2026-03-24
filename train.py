@@ -29,7 +29,7 @@ with mlflow.start_run() as run:
 
     mlflow.log_param("n_estimators", 100)
     mlflow.log_param("dataset", "synthetic make_classification")
-    accuracy = 0.70 # Simulate a model that fails the threshold
+    # accuracy = 0.70 # Simulate a model that fails the threshold
     mlflow.log_metric("accuracy", accuracy)
     mlflow.sklearn.log_model(clf, artifact_path="model")
 
